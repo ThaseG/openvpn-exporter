@@ -38,5 +38,5 @@ jobs:
         echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
     
     - name: Run golangci-lint
-      working-directory: Exporter
+      #working-directory: Exporter
       run: golangci-lint run --timeout=5m
