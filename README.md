@@ -2,6 +2,10 @@
 
 Prometheus exporter for OpenVPN server metrics with JSON session API endpoint.
 
+## Example usage
+
+To see an example usage and e2e tests, please visit this [openvpn repository.](https://github.com/ThaseG/openvpn)
+
 ## Images
 
 #### Main page
