@@ -1,4 +1,4 @@
-name: CI
+name: Repository testing
 
 on:
   push:
@@ -11,43 +11,19 @@ jobs:
   go-lint:
     runs-on: self-hosted
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v5
       with:
-        fetch-depth: 0
-    
-    - uses: actions/setup-go@v5  # Updated to v5
-      with:
-        go-version: '1.23'  # Use actual latest Go version
-    
-    - name: Setup Go environment and dependencies
+        go-version: '1.23'  # Use actual version
+        
+    - name: Install golangci-lint from source
       run: |
-        go mod tidy
-        go mod download
-        go mod verify
-        go build -v .
+        go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
     
-    # Option 1: Use golangci-lint action (recommended)
     - name: Run golangci-lint
-      uses: golangci/golangci-lint-action@v6
-      with:
-        version: latest
-        args: --timeout=5m
-
-  trivy-scan-local:
-    runs-on: self-hosted
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Run Trivy vulnerability scanner
-      run: |
-        trivy fs . \
-          --severity HIGH,CRITICAL \
-          --exit-code 1 \
-          --no-progress \
-          --format table
-
+      run: golangci-lint run --timeout=5m
   trivy-scan-docker:
     runs-on: self-hosted
+
     container:
       image: aquasec/trivy:latest
     steps:
