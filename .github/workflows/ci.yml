@@ -48,7 +48,6 @@ jobs:
       run: |
         trivy fs . \
           --severity HIGH,CRITICAL \
-          --ignorefile .trivyignore \
           --exit-code 1 \
           --no-progress \
           --format table
