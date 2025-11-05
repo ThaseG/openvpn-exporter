@@ -29,7 +29,7 @@ jobs:
         go mod verify
         
         # Test that it builds
-        go build -v
+        go build -v .
     
     - name: Install golangci-lint
       run: |
@@ -38,3 +38,32 @@ jobs:
     
     - name: Run golangci-lint
       run: golangci-lint run --timeout=5m
+
+  trivy-scan-local:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      run: |
+        trivy fs . \
+          --severity HIGH,CRITICAL \
+          --ignorefile .trivyignore \
+          --exit-code 1 \
+          --no-progress \
+          --format table
+
+  trivy-scan-docker:
+    runs-on: self-hosted
+    container:
+      image: aquasec/trivy:latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      run: |
+        trivy fs . \
+          --severity HIGH,CRITICAL \
+          --exit-code 1 \
+          --no-progress \
+          --format table
