@@ -1,6 +1,6 @@
 module openvpn-exporter
 
-go 1.23
+go 1.25
 
 require (
 	github.com/go-kit/log v0.2.1
