@@ -29,7 +29,6 @@ type SessionExport struct {
 	PacketsOut  string `json:"packetsout"`
 }
 
-// Get local OpenVPN connections
 func sessionsHandler(w http.ResponseWriter, r *http.Request, conf *Config, logger log.Logger) {
 	serverName := conf.ServerName
 	if serverName == "" {
@@ -38,9 +37,8 @@ func sessionsHandler(w http.ResponseWriter, r *http.Request, conf *Config, logge
 
 	connExport, err := getAllOpenVPNSessions(serverName, conf, logger)
 	if err != nil {
-		w.WriteHeader(500)
-		fmt.Fprint(w, err.Error())
-		return
+		_ = level.Warn(logger).Log("task", "sessions handler", "msg", err.Error())
+		connExport = []SessionExport{}
 	}
 
 	jsondata, err := json.Marshal(connExport)
@@ -57,11 +55,9 @@ func sessionsHandler(w http.ResponseWriter, r *http.Request, conf *Config, logge
 	}
 }
 
-// Get all OpenVPN sessions from both TCP and UDP status files
 func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]SessionExport, error) {
 	var allSessions []SessionExport
 
-	// Try to get TCP sessions
 	if conf.OvpnTCPStatus != "" {
 		sessions, _, _, err := getOpenVPNSessions(server, conf.OvpnTCPStatus, "tcp", logger)
 		if err != nil {
@@ -72,7 +68,6 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 		}
 	}
 
-	// Try to get UDP sessions
 	if conf.OvpnUDPStatus != "" {
 		sessions, _, _, err := getOpenVPNSessions(server, conf.OvpnUDPStatus, "udp", logger)
 		if err != nil {
@@ -84,13 +79,12 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 	}
 
 	if len(allSessions) == 0 {
-		return nil, fmt.Errorf("no OpenVPN sessions found in any status file")
+		return []SessionExport{}, fmt.Errorf("no OpenVPN sessions found in any status file")
 	}
 
 	return allSessions, nil
 }
 
-// Get OpenVPN local sessions from a specific status file
 func getOpenVPNSessions(server string, statusFile string, protocol string, logger log.Logger) (connExport []SessionExport, product string, version string, err error) {
 	reVersion := regexp.MustCompile(`(?m)^TITLE\s+(?P<product>\S+)\s+(?P<version>\S+)\s`)
 	reClient := regexp.MustCompile(`(?m)^CLIENT_LIST\s+(?P<CN>\S+?)\t(?P<RealIP>\S+?)\t(?P<vIPv4>\S+?)\t(?P<vIPv6>\S*?)\t(?P<rB>\S+?)\t(?P<sB>\S+?)\t(?P<startTime>.+?)\t(?P<unixTime>\S+?)\t(?P<Username>.+?)\t(?P<ClientID>\S+?)\t(?P<peerID>\S+?)\t(?P<dataCiphers>\S+?)`)
@@ -100,7 +94,6 @@ func getOpenVPNSessions(server string, statusFile string, protocol string, logge
 		return nil, "", "", fmt.Errorf("status file path is empty")
 	}
 	
-	// Check if file exists
 	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
 		return nil, "", "", fmt.Errorf("status file does not exist: %s", statusFile)
 	}
