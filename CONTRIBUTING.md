@@ -16,7 +16,7 @@ New versions **MUST** be created via a git tag of the following format: `v$MAJOR
 
 Version numbers **MUST** follow Semantic Versionning.
 
-Major version of OpenVPN must reflect a change in MINOR number. Patch number is reflecting in a change in this repository.
+Major version of OpenVPN, or Go that changes behavior, must reflect a change in MINOR number. Patch number is reflecting in a change in this repository such as bug fix or feature request.
 
 # Architecture Decision Records
 
