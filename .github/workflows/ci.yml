@@ -15,11 +15,15 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-        clean: true
     
-    - uses: actions/setup-go@v5  # Updated to v5
+    - name: Fix file permissions
+      run: |
+        sudo chown -R $(whoami):$(whoami) $GITHUB_WORKSPACE
+        sudo chmod -R u+rwX $GITHUB_WORKSPACE
+    
+    - uses: actions/setup-go@v5
       with:
-        go-version: '1.23'  # Use actual latest Go version
+        go-version: '1.25'
     
     - name: Setup Go environment and dependencies
       run: |
@@ -34,32 +38,25 @@ jobs:
       with:
         version: latest
         args: --timeout=5m
-      continue-on-error: true  # Don't fail workflow immediately
+      continue-on-error: true
     
     - name: Check golangci-lint result
       run: |
         OUTCOME="${{ steps.golangci.outcome }}"
-        
         echo "golangci-lint outcome: $OUTCOME"
-        
-        # Success or config error (exit 3) - pass
         if [ "$OUTCOME" = "success" ]; then
           echo "✅ No linting issues"
           exit 0
         fi
-        
-        # If failed, we need to check if it's exit code 3
-        # Unfortunately the action doesn't expose the exact exit code
-        # So we'll assume any failure that's not from linting issues is ok
         echo "⚠️ golangci-lint failed, treating as non-critical"
         exit 0
 
   trivy-scan-docker:
     runs-on: self-hosted
-
     container:
       image: aquasec/trivy:latest
     steps:
+    
     - uses: actions/checkout@v4
     
     - name: Run Trivy vulnerability scanner
