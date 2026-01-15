@@ -34,6 +34,7 @@ jobs:
       with:
         version: latest
         args: --timeout=5m
+        skip-cache: true
       continue-on-error: true  # Don't fail workflow immediately
     
     - name: Check golangci-lint result
