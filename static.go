@@ -3,16 +3,17 @@ package main
 import (
 	"fmt"
 	"net/http"
-	"strconv"
 
 	"github.com/go-kit/log"
 	"github.com/go-kit/log/level"
 )
 
 func staticHandler(w http.ResponseWriter, r *http.Request, conf *Config, logger log.Logger) {
-	_ = level.Debug(logger).Log("task", "Generating static HTML page")
+	if conf.Debug {
+		_ = level.Debug(logger).Log("task", "Generating static HTML page")
+	}
 
-	sessions, err := getAllOpenVPNSessions("", conf, logger)
+	sessions, err := getAllOpenVPNSessions(conf.ServerName, conf, logger)
 	if err != nil {
 		w.WriteHeader(500)
 		fmt.Fprintf(w, "Error: %s", err.Error())
@@ -31,235 +32,158 @@ func staticHandler(w http.ResponseWriter, r *http.Request, conf *Config, logger 
             padding: 0;
             box-sizing: border-box;
         }
-        
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f5f7fa;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             padding: 20px;
         }
-        
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 30px;
-            border-radius: 10px;
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #333;
+            font-size: 2.5em;
             margin-bottom: 30px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        
-        .header h1 {
-            font-size: 2em;
-            margin-bottom: 10px;
-        }
-        
         .back-link {
             display: inline-block;
-            color: white;
-            text-decoration: none;
-            margin-top: 10px;
-            opacity: 0.9;
-        }
-        
-        .back-link:hover {
-            opacity: 1;
-        }
-        
-        .stats {
-            display: flex;
-            gap: 20px;
-            margin-bottom: 30px;
-            flex-wrap: wrap;
-        }
-        
-        .stat-card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            flex: 1;
-            min-width: 200px;
-        }
-        
-        .stat-value {
-            font-size: 2em;
-            font-weight: bold;
+            margin-bottom: 20px;
             color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
         }
-        
-        .stat-label {
-            color: #666;
-            margin-top: 5px;
+        .back-link:hover {
+            text-decoration: underline;
         }
-        
-        .table-container {
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        
         table {
             width: 100%;
             border-collapse: collapse;
+            margin-top: 20px;
         }
-        
         th {
-            background: #667eea;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 15px;
             text-align: left;
             font-weight: 600;
-            font-size: 0.9em;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
         }
-        
         td {
-            padding: 15px;
-            border-bottom: 1px solid #f0f0f0;
+            padding: 12px 15px;
+            border-bottom: 1px solid #eee;
         }
-        
         tr:hover {
-            background: #f8f9fa;
+            background-color: #f5f5f5;
         }
-        
-        tr:last-child td {
-            border-bottom: none;
-        }
-        
-        .status {
+        .badge {
             display: inline-block;
-            padding: 5px 12px;
-            border-radius: 20px;
+            padding: 4px 12px;
+            border-radius: 12px;
             font-size: 0.85em;
-            font-weight: 600;
+            font-weight: 500;
         }
-        
-        .status-established {
-            background: #d4edda;
-            color: #155724;
+        .badge-tcp {
+            background-color: #e3f2fd;
+            color: #1976d2;
         }
-        
-        .protocol-badge {
-            display: inline-block;
-            padding: 3px 8px;
-            border-radius: 4px;
-            font-size: 0.8em;
-            font-weight: 600;
-            text-transform: uppercase;
+        .badge-udp {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
         }
-        
-        .protocol-tcp {
-            background: #cfe2ff;
-            color: #084298;
+        .badge-established {
+            background-color: #e8f5e9;
+            color: #388e3c;
         }
-        
-        .protocol-udp {
-            background: #f8d7da;
-            color: #842029;
-        }
-        
-        .footer {
+        .no-data {
             text-align: center;
-            margin-top: 30px;
-            color: #666;
-            font-size: 0.9em;
+            padding: 40px;
+            color: #999;
+            font-size: 1.1em;
+        }
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 1.8em;
+            }
+            table {
+                font-size: 0.9em;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>🌐 OpenVPN Local Clients</h1>
-        <p>Active VPN connections and statistics</p>
+    <div class="container">
         <a href="/" class="back-link">← Back to Dashboard</a>
-    </div>
-    
-    <div class="stats">
-        <div class="stat-card">
-            <div class="stat-value">` + strconv.Itoa(len(sessions)) + `</div>
-            <div class="stat-label">Active Connections</div>
-        </div>
-    </div>
-    
-    <div class="table-container">
+        <h1>🔒 Active OpenVPN Clients</h1>`
+
+	if len(sessions) == 0 {
+		html += `
+        <div class="no-data">No active connections</div>`
+	} else {
+		html += `
         <table>
             <thead>
                 <tr>
-                    <th>Protocol</th>
-                    <th>Remote ID (CN)</th>
+                    <th>Client ID</th>
                     <th>Remote Host</th>
-                    <th>Remote Port</th>
-                    <th>Tunnel IP</th>
+                    <th>Virtual IP</th>
+                    <th>Protocol</th>
                     <th>State</th>
-                    <th>Established</th>
                     <th>Bytes In</th>
                     <th>Bytes Out</th>
+                    <th>Connected Since</th>
                 </tr>
             </thead>
             <tbody>`
 
-	for _, session := range sessions {
-		protocolClass := "protocol-tcp"
-		if session.Protocol == "udp" {
-			protocolClass = "protocol-udp"
-		}
+		for _, sess := range sessions {
+			protocolClass := "badge-tcp"
+			if sess.Protocol == "udp" {
+				protocolClass = "badge-udp"
+			}
 
-		bytesIn := formatBytes(session.BytesIn)
-		bytesOut := formatBytes(session.BytesOut)
-
-		html += fmt.Sprintf(`
+			html += fmt.Sprintf(`
                 <tr>
-                    <td><span class="protocol-badge %s">%s</span></td>
                     <td>%s</td>
+                    <td>%s:%s</td>
                     <td>%s</td>
-                    <td>%s</td>
-                    <td>%s</td>
-                    <td><span class="status status-established">%s</span></td>
+                    <td><span class="badge %s">%s</span></td>
+                    <td><span class="badge badge-established">%s</span></td>
                     <td>%s</td>
                     <td>%s</td>
                     <td>%s</td>
                 </tr>`,
-			protocolClass,
-			session.Protocol,
-			session.RemoteID,
-			session.RemoteHost,
-			session.RemotePort,
-			session.RemoteTs,
-			session.State,
-			session.Established,
-			bytesIn,
-			bytesOut,
-		)
+				sess.RemoteID,
+				sess.RemoteHost,
+				sess.RemotePort,
+				sess.RemoteTs,
+				protocolClass,
+				sess.Protocol,
+				sess.State,
+				sess.BytesIn,
+				sess.BytesOut,
+				sess.Established,
+			)
+		}
+
+		html += `
+            </tbody>
+        </table>`
 	}
 
 	html += `
-            </tbody>
-        </table>
-    </div>
-    
-    <div class="footer">
-        Showing ` + strconv.Itoa(len(sessions)) + ` active connection(s)
     </div>
 </body>
 </html>`
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	_, _ = w.Write([]byte(html))
-}
-
-func formatBytes(bytesStr string) string {
-	bytes, err := strconv.ParseFloat(bytesStr, 64)
-	if err != nil {
-		return bytesStr
-	}
-
-	units := []string{"B", "KB", "MB", "GB", "TB"}
-	unitIndex := 0
-
-	for bytes >= 1024 && unitIndex < len(units)-1 {
-		bytes /= 1024
-		unitIndex++
-	}
-
-	return fmt.Sprintf("%.2f %s", bytes, units[unitIndex])
 }
