@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	version   = "1.0.0"
-	buildDate = "unknown"
+	version   = "1.0.3"
+	buildDate = "2026-02-22"
 )
 
 func main() {
@@ -38,14 +38,18 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Register collector
+	if conf.Debug {
+		_ = level.Info(logger).Log("msg", "Debug logging enabled")
+	}
+
+	// Create collector and start background 15-second refresh
 	collector := &OpenVPNCollector{
 		conf:   conf,
 		logger: logger,
 	}
-	prometheus.MustRegister(collector)
+	collector.StartBackgroundRefresh()
 
-	// Create separate registries for different metrics
+	// Register collector with a dedicated registry (OpenVPN metrics only)
 	ovpnRegistry := prometheus.NewRegistry()
 	ovpnRegistry.MustRegister(collector)
 
@@ -194,7 +198,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request, logger log.Logger) {
             <a href="/sessions_local" class="link-item">📋 Local Sessions JSON</a>
         </div>
         <div class="footer">
-            OpenVPN Exporter v1.0.0
+            OpenVPN Exporter v1.0.3
         </div>
     </div>
 </body>

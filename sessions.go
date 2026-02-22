@@ -47,7 +47,7 @@ func sessionsHandler(w http.ResponseWriter, r *http.Request, conf *Config, logge
 		fmt.Fprint(w, err.Error())
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	_, err = w.Write(jsondata)
 	if err != nil {
@@ -64,7 +64,9 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 			_ = level.Warn(logger).Log("task", "read TCP status", "err", err.Error())
 		} else {
 			allSessions = append(allSessions, sessions...)
-			_ = level.Debug(logger).Log("task", "TCP sessions", "count", len(sessions))
+			if conf.Debug {
+				_ = level.Debug(logger).Log("task", "TCP sessions", "count", len(sessions))
+			}
 		}
 	}
 
@@ -74,7 +76,9 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 			_ = level.Warn(logger).Log("task", "read UDP status", "err", err.Error())
 		} else {
 			allSessions = append(allSessions, sessions...)
-			_ = level.Debug(logger).Log("task", "UDP sessions", "count", len(sessions))
+			if conf.Debug {
+				_ = level.Debug(logger).Log("task", "UDP sessions", "count", len(sessions))
+			}
 		}
 	}
 
@@ -88,12 +92,11 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 func getOpenVPNSessions(server string, statusFile string, protocol string, logger log.Logger) (connExport []SessionExport, product string, version string, err error) {
 	reVersion := regexp.MustCompile(`(?m)^TITLE\s+(?P<product>\S+)\s+(?P<version>\S+)\s`)
 	reClient := regexp.MustCompile(`(?m)^CLIENT_LIST\s+(?P<CN>\S+?)\t(?P<RealIP>\S+?)\t(?P<vIPv4>\S+?)\t(?P<vIPv6>\S*?)\t(?P<rB>\S+?)\t(?P<sB>\S+?)\t(?P<startTime>.+?)\t(?P<unixTime>\S+?)\t(?P<Username>.+?)\t(?P<ClientID>\S+?)\t(?P<peerID>\S+?)\t(?P<dataCiphers>\S+?)`)
-	var cexp SessionExport
 
 	if statusFile == "" {
 		return nil, "", "", fmt.Errorf("status file path is empty")
 	}
-	
+
 	if _, err := os.Stat(statusFile); os.IsNotExist(err) {
 		return nil, "", "", fmt.Errorf("status file does not exist: %s", statusFile)
 	}
@@ -118,7 +121,8 @@ func getOpenVPNSessions(server string, statusFile string, protocol string, logge
 				clientList[name] = string(m1[i])
 			}
 		}
-		
+
+		var cexp SessionExport
 		cip := strings.Split(clientList["RealIP"], ":")
 		cexp.RemoteHost = cip[0]
 		if len(cip) > 1 {
@@ -139,6 +143,6 @@ func getOpenVPNSessions(server string, statusFile string, protocol string, logge
 
 		connExport = append(connExport, cexp)
 	}
-	
+
 	return connExport, product, version, nil
 }

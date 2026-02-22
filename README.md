@@ -253,7 +253,7 @@ go mod download
 go build -o openvpn-exporter
 
 # Optional: Build with version info
-go build -ldflags "-X main.version=1.0.0 -X main.buildDate=$(date -u +%Y-%m-%d)" -o openvpn-exporter
+go build -ldflags "-X main.version=1.0.3 -X main.buildDate=$(date -u +%Y-%m-%d)" -o openvpn-exporter
 ```
 
 ## Configuration
