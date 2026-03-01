@@ -31,19 +31,23 @@ To see an example usage and e2e tests, please visit this [openvpn repository.](h
 
 # HELP ovpn_bytes_in_total Total number of bytes received
 # TYPE ovpn_bytes_in_total counter
-ovpn_bytes_in_total{client="bookworm.openvpn.com_tcp"} 3317
+ovpn_bytes_in_total{client="bookworm.openvpn.com_10.0.0.2_udp"} 139559
+ovpn_bytes_in_total{client="bullseye.openvpn.com_10.0.0.3_tcp"} 139507
+ovpn_bytes_in_total{client="jammy.openvpn.com_10.0.0.4_tcp"} 139553
 # HELP ovpn_bytes_out_total Total number of bytes sent
 # TYPE ovpn_bytes_out_total counter
-ovpn_bytes_out_total{client="bookworm.openvpn.com_tcp"} 3616
+ovpn_bytes_out_total{client="bookworm.openvpn.com_10.0.0.2_udp"} 139896
+ovpn_bytes_out_total{client="bullseye.openvpn.com_10.0.0.3_tcp"} 140158
+ovpn_bytes_out_total{client="jammy.openvpn.com_10.0.0.4_tcp"} 140116
 # HELP ovpn_info Software info
 # TYPE ovpn_info counter
-ovpn_info{product="OpenVPN",version="2.6.19"} 1
+ovpn_info{product="OpenVPN",version="2.7.0"} 1
 # HELP ovpn_sessions_total Total number of active sessions
 # TYPE ovpn_sessions_total gauge
-ovpn_sessions_total 1
+ovpn_sessions_total 3
 # HELP probe_success OpenVPN Status
 # TYPE probe_success gauge
-probe_success{version="2.6.19"} 1
+probe_success{version="2.7.0"} 1
 ```
 #### Internal Exporter Metrics
 ```
@@ -51,13 +55,13 @@ probe_success{version="2.6.19"} 1
 
 # HELP go_gc_duration_seconds A summary of the wall-time pause (stop-the-world) duration in garbage collection cycles.
 # TYPE go_gc_duration_seconds summary
-go_gc_duration_seconds{quantile="0"} 0.000274894
-go_gc_duration_seconds{quantile="0.25"} 0.000274894
-go_gc_duration_seconds{quantile="0.5"} 0.000274894
-go_gc_duration_seconds{quantile="0.75"} 0.000274894
-go_gc_duration_seconds{quantile="1"} 0.000274894
-go_gc_duration_seconds_sum 0.000274894
-go_gc_duration_seconds_count 1
+go_gc_duration_seconds{quantile="0"} 7.3968e-05
+go_gc_duration_seconds{quantile="0.25"} 7.3968e-05
+go_gc_duration_seconds{quantile="0.5"} 0.00021333
+go_gc_duration_seconds{quantile="0.75"} 0.000336209
+go_gc_duration_seconds{quantile="1"} 0.000336209
+go_gc_duration_seconds_sum 0.000623507
+go_gc_duration_seconds_count 3
 # HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent
 # TYPE go_gc_gogc_percent gauge
 go_gc_gogc_percent 100
@@ -66,49 +70,49 @@ go_gc_gogc_percent 100
 go_gc_gomemlimit_bytes 9.223372036854776e+18
 # HELP go_goroutines Number of goroutines that currently exist.
 # TYPE go_goroutines gauge
-go_goroutines 7
+go_goroutines 10
 # HELP go_info Information about the Go environment.
 # TYPE go_info gauge
-go_info{version="go1.25.5"} 1
+go_info{version="go1.25.7"} 1
 # HELP go_memstats_alloc_bytes Number of bytes allocated in heap and currently in use. Equals to /memory/classes/heap/objects:bytes.
 # TYPE go_memstats_alloc_bytes gauge
-go_memstats_alloc_bytes 2.269552e+06
+go_memstats_alloc_bytes 1.986984e+06
 # HELP go_memstats_alloc_bytes_total Total number of bytes allocated in heap until now, even if released already. Equals to /gc/heap/allocs:bytes.
 # TYPE go_memstats_alloc_bytes_total counter
-go_memstats_alloc_bytes_total 3.201328e+06
+go_memstats_alloc_bytes_total 7.008048e+06
 # HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table. Equals to /memory/classes/profiling/buckets:bytes.
 # TYPE go_memstats_buck_hash_sys_bytes gauge
 go_memstats_buck_hash_sys_bytes 1.444008e+06
 # HELP go_memstats_frees_total Total number of heap objects frees. Equals to /gc/heap/frees:objects + /gc/heap/tiny/allocs:objects.
 # TYPE go_memstats_frees_total counter
-go_memstats_frees_total 6874
+go_memstats_frees_total 34270
 # HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata. Equals to /memory/classes/metadata/other:bytes.
 # TYPE go_memstats_gc_sys_bytes gauge
-go_memstats_gc_sys_bytes 2.107152e+06
+go_memstats_gc_sys_bytes 2.685712e+06
 # HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and currently in use, same as go_memstats_alloc_bytes. Equals to /memory/classes/heap/objects:bytes.
 # TYPE go_memstats_heap_alloc_bytes gauge
-go_memstats_heap_alloc_bytes 2.269552e+06
+go_memstats_heap_alloc_bytes 1.986984e+06
 # HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used. Equals to /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
 # TYPE go_memstats_heap_idle_bytes gauge
-go_memstats_heap_idle_bytes 4.456448e+06
+go_memstats_heap_idle_bytes 4.677632e+06
 # HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes
 # TYPE go_memstats_heap_inuse_bytes gauge
-go_memstats_heap_inuse_bytes 3.538944e+06
+go_memstats_heap_inuse_bytes 3.31776e+06
 # HELP go_memstats_heap_objects Number of currently allocated objects. Equals to /gc/heap/objects:objects.
 # TYPE go_memstats_heap_objects gauge
-go_memstats_heap_objects 2724
+go_memstats_heap_objects 5723
 # HELP go_memstats_heap_released_bytes Number of heap bytes released to OS. Equals to /memory/classes/heap/released:bytes.
 # TYPE go_memstats_heap_released_bytes gauge
-go_memstats_heap_released_bytes 3.555328e+06
+go_memstats_heap_released_bytes 4.677632e+06
 # HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system. Equals to /memory/classes/heap/objects:bytes + /memory/classes/heap/unused:bytes + /memory/classes/heap/released:bytes + /memory/classes/heap/free:bytes.
 # TYPE go_memstats_heap_sys_bytes gauge
 go_memstats_heap_sys_bytes 7.995392e+06
 # HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.
 # TYPE go_memstats_last_gc_time_seconds gauge
-go_memstats_last_gc_time_seconds 1.762202458882669e+09
+go_memstats_last_gc_time_seconds 1.772390181700876e+09
 # HELP go_memstats_mallocs_total Total number of heap objects allocated, both live and gc-ed. Semantically a counter version for go_memstats_heap_objects gauge. Equals to /gc/heap/allocs:objects + /gc/heap/tiny/allocs:objects.
 # TYPE go_memstats_mallocs_total counter
-go_memstats_mallocs_total 9598
+go_memstats_mallocs_total 39993
 # HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures. Equals to /memory/classes/metadata/mcache/inuse:bytes.
 # TYPE go_memstats_mcache_inuse_bytes gauge
 go_memstats_mcache_inuse_bytes 2416
@@ -117,16 +121,16 @@ go_memstats_mcache_inuse_bytes 2416
 go_memstats_mcache_sys_bytes 15704
 # HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures. Equals to /memory/classes/metadata/mspan/inuse:bytes.
 # TYPE go_memstats_mspan_inuse_bytes gauge
-go_memstats_mspan_inuse_bytes 53920
+go_memstats_mspan_inuse_bytes 50400
 # HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system. Equals to /memory/classes/metadata/mspan/inuse:bytes + /memory/classes/metadata/mspan/free:bytes.
 # TYPE go_memstats_mspan_sys_bytes gauge
 go_memstats_mspan_sys_bytes 65280
 # HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place. Equals to /gc/heap/goal:bytes.
 # TYPE go_memstats_next_gc_bytes gauge
-go_memstats_next_gc_bytes 4.396978e+06
+go_memstats_next_gc_bytes 4.194304e+06
 # HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations. Equals to /memory/classes/other:bytes.
 # TYPE go_memstats_other_sys_bytes gauge
-go_memstats_other_sys_bytes 584952
+go_memstats_other_sys_bytes 596216
 # HELP go_memstats_stack_inuse_bytes Number of bytes obtained from system for stack allocator in non-CGO environments. Equals to /memory/classes/heap/stacks:bytes.
 # TYPE go_memstats_stack_inuse_bytes gauge
 go_memstats_stack_inuse_bytes 393216
@@ -135,52 +139,37 @@ go_memstats_stack_inuse_bytes 393216
 go_memstats_stack_sys_bytes 393216
 # HELP go_memstats_sys_bytes Number of bytes obtained from system. Equals to /memory/classes/total:byte.
 # TYPE go_memstats_sys_bytes gauge
-go_memstats_sys_bytes 1.2605704e+07
+go_memstats_sys_bytes 1.3195528e+07
 # HELP go_sched_gomaxprocs_threads The current runtime.GOMAXPROCS setting, or the number of operating system threads that can execute user-level Go code simultaneously. Sourced from /sched/gomaxprocs:threads
 # TYPE go_sched_gomaxprocs_threads gauge
 go_sched_gomaxprocs_threads 2
 # HELP go_threads Number of OS threads created.
 # TYPE go_threads gauge
 go_threads 4
-# HELP ovpn_bytes_in_total Total number of bytes received
-# TYPE ovpn_bytes_in_total counter
-ovpn_bytes_in_total{client="bookworm.openvpn.com_tcp"} 2837
-# HELP ovpn_bytes_out_total Total number of bytes sent
-# TYPE ovpn_bytes_out_total counter
-ovpn_bytes_out_total{client="bookworm.openvpn.com_tcp"} 3112
-# HELP ovpn_info Software info
-# TYPE ovpn_info counter
-ovpn_info{product="OpenVPN",version="2.6.19"} 1
-# HELP ovpn_sessions_total Total number of active sessions
-# TYPE ovpn_sessions_total gauge
-ovpn_sessions_total 1
-# HELP probe_success OpenVPN Status
-# TYPE probe_success gauge
-probe_success{version="2.6.19"} 1
 # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
 # TYPE process_cpu_seconds_total counter
-process_cpu_seconds_total 0.02
+process_cpu_seconds_total 0.09
 # HELP process_max_fds Maximum number of open file descriptors.
 # TYPE process_max_fds gauge
-process_max_fds 1.048576e+06
+process_max_fds 1.073741816e+09
 # HELP process_network_receive_bytes_total Number of bytes received by the process over the network.
 # TYPE process_network_receive_bytes_total counter
-process_network_receive_bytes_total 18478
+process_network_receive_bytes_total 1.264247e+06
 # HELP process_network_transmit_bytes_total Number of bytes sent by the process over the network.
 # TYPE process_network_transmit_bytes_total counter
-process_network_transmit_bytes_total 28386
+process_network_transmit_bytes_total 1.290248e+06
 # HELP process_open_fds Number of open file descriptors.
 # TYPE process_open_fds gauge
 process_open_fds 10
 # HELP process_resident_memory_bytes Resident memory size in bytes.
 # TYPE process_resident_memory_bytes gauge
-process_resident_memory_bytes 1.4336e+07
+process_resident_memory_bytes 1.5265792e+07
 # HELP process_start_time_seconds Start time of the process since unix epoch in seconds.
 # TYPE process_start_time_seconds gauge
-process_start_time_seconds 1.76220227316e+09
+process_start_time_seconds 1.77238964102e+09
 # HELP process_virtual_memory_bytes Virtual memory size in bytes.
 # TYPE process_virtual_memory_bytes gauge
-process_virtual_memory_bytes 1.264467968e+09
+process_virtual_memory_bytes 1.265078272e+09
 # HELP process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.
 # TYPE process_virtual_memory_max_bytes gauge
 process_virtual_memory_max_bytes 1.8446744073709552e+19
@@ -189,7 +178,7 @@ process_virtual_memory_max_bytes 1.8446744073709552e+19
 promhttp_metric_handler_requests_in_flight 1
 # HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
 # TYPE promhttp_metric_handler_requests_total counter
-promhttp_metric_handler_requests_total{code="200"} 1
+promhttp_metric_handler_requests_total{code="200"} 0
 promhttp_metric_handler_requests_total{code="500"} 0
 promhttp_metric_handler_requests_total{code="503"} 0
 ```
@@ -197,7 +186,7 @@ promhttp_metric_handler_requests_total{code="503"} 0
 ```
 # http://<OpenVPN server IP>:9234/sessions_local
 
-[{"server":"openvpn-server","protocol":"tcp","p1uniqueid":"0","p2uniqueid":"0","state":"ESTABLISHED","remotehost":"78.99.236.15","remoteport":"53993","remoteid":"bookworm.openvpn.com","remotets":"10.0.0.2","established":"2025-11-03 20:40:03","bytesin":"3557","bytesout":"3868","packetsin":"0","packetsout":"0"}]
+[{"server":"openvpn-server","protocol":"tcp","p1uniqueid":"2","p2uniqueid":"2","state":"ESTABLISHED","remotehost":"192.168.200.40","remoteport":"45334","remoteid":"jammy.openvpn.com","remotets":"10.0.0.4","established":"2026-03-01 18:27:27","bytesin":"140033","bytesout":"140620","packetsin":"0","packetsout":"0"},{"server":"openvpn-server","protocol":"udp","p1uniqueid":"0","p2uniqueid":"0","state":"ESTABLISHED","remotehost":"192.168.200.10","remoteport":"41192","remoteid":"bookworm.openvpn.com","remotets":"10.0.0.2","established":"2026-03-01 18:27:22","bytesin":"140039","bytesout":"140376","packetsin":"0","packetsout":"0"},{"server":"openvpn-server","protocol":"tcp","p1uniqueid":"1","p2uniqueid":"1","state":"ESTABLISHED","remotehost":"192.168.200.20","remoteport":"42684","remoteid":"bullseye.openvpn.com","remotets":"10.0.0.3","established":"2026-03-01 18:27:24","bytesin":"139987","bytesout":"140662","packetsin":"0","packetsout":"0"}]
 ```
 
 ## Features
