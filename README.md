@@ -6,6 +6,13 @@ Prometheus exporter for OpenVPN server metrics with JSON session API endpoint.
 
 To see an example usage and e2e tests, please visit this [openvpn repository.](https://github.com/ThaseG/openvpn)
 
+## OpenVPN version support
+
+| Exporter Version | Supported OpenVPN version |
+| ------ | ------ |
+| v1.1.0 | v2.7.x </br> v2.6.x |
+| v1.0.3 | v2.6.x |
+
 ## Images
 
 #### Main page
@@ -255,7 +262,7 @@ go mod download
 go build -o openvpn-exporter
 
 # Optional: Build with version info
-go build -ldflags "-X main.version=1.0.3 -X main.buildDate=$(date -u +%Y-%m-%d)" -o openvpn-exporter
+go build -ldflags "-X main.version=1.1.0 -X main.buildDate=$(date -u +%Y-%m-%d)" -o openvpn-exporter
 ```
 
 ## Configuration
