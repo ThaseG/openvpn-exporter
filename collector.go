@@ -117,6 +117,27 @@ func (c *OpenVPNCollector) collect() {
 	var versions []string
 	var versionFound string
 
+	// 2.7.x: single unified status file — protocol auto-detected from address prefix
+	if c.conf.OvpnStatus != "" {
+		c.debugLog("task", "Collecting unified status", "target", c.conf.OvpnStatus)
+		sess, product, version, err := getOpenVPNSessions("", c.conf.OvpnStatus, "", c.logger)
+		if err != nil {
+			_ = level.Error(c.logger).Log("task", "Collecting unified status", "status", "ERROR", "msg", err)
+		} else {
+			allSessions = append(allSessions, sess...)
+			if product != "" && version != "" {
+				if versionFound == "" {
+					versionFound = version
+				}
+				if !productVersionExists(products, versions, product, version) {
+					products = append(products, product)
+					versions = append(versions, version)
+				}
+			}
+		}
+	}
+
+	// 2.6.x: separate TCP status file
 	if c.conf.OvpnTCPStatus != "" {
 		c.debugLog("task", "Collecting TCP", "target", c.conf.OvpnTCPStatus)
 		sess, product, version, err := getOpenVPNSessions("", c.conf.OvpnTCPStatus, "tcp", c.logger)
@@ -136,6 +157,7 @@ func (c *OpenVPNCollector) collect() {
 		}
 	}
 
+	// 2.6.x: separate UDP status file
 	if c.conf.OvpnUDPStatus != "" {
 		c.debugLog("task", "Collecting UDP", "target", c.conf.OvpnUDPStatus)
 		sess, product, version, err := getOpenVPNSessions("", c.conf.OvpnUDPStatus, "udp", c.logger)

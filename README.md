@@ -30,13 +30,13 @@ ovpn_bytes_in_total{client="bookworm.openvpn.com_tcp"} 3317
 ovpn_bytes_out_total{client="bookworm.openvpn.com_tcp"} 3616
 # HELP ovpn_info Software info
 # TYPE ovpn_info counter
-ovpn_info{product="OpenVPN",version="2.6.15"} 1
+ovpn_info{product="OpenVPN",version="2.6.19"} 1
 # HELP ovpn_sessions_total Total number of active sessions
 # TYPE ovpn_sessions_total gauge
 ovpn_sessions_total 1
 # HELP probe_success OpenVPN Status
 # TYPE probe_success gauge
-probe_success{version="2.6.15"} 1
+probe_success{version="2.6.19"} 1
 ```
 #### Internal Exporter Metrics
 ```
@@ -143,13 +143,13 @@ ovpn_bytes_in_total{client="bookworm.openvpn.com_tcp"} 2837
 ovpn_bytes_out_total{client="bookworm.openvpn.com_tcp"} 3112
 # HELP ovpn_info Software info
 # TYPE ovpn_info counter
-ovpn_info{product="OpenVPN",version="2.6.15"} 1
+ovpn_info{product="OpenVPN",version="2.6.19"} 1
 # HELP ovpn_sessions_total Total number of active sessions
 # TYPE ovpn_sessions_total gauge
 ovpn_sessions_total 1
 # HELP probe_success OpenVPN Status
 # TYPE probe_success gauge
-probe_success{version="2.6.15"} 1
+probe_success{version="2.6.19"} 1
 # HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.
 # TYPE process_cpu_seconds_total counter
 process_cpu_seconds_total 0.02
@@ -228,10 +228,12 @@ Returns detailed session information including:
 Your OpenVPN server must be configured to generate a status file. Add this to your OpenVPN server config:
 
 ```
-# For UDP status file
+# For UDP status file / 2.6.x OpenVPN version
 status /home/openvpn/logs/openvpn-udp-status
-# For TCP status file
+# For TCP status file / 2.6.x OpenVPN version
 status /home/openvpn/logs/openvpn-tcp-status
+# For common status file / 2.7.x OpenVPN version
+status /home/openvpn/logs/openvpn-status
 status-version 3
 ```
 
@@ -261,9 +263,14 @@ go build -ldflags "-X main.version=1.0.3 -X main.buildDate=$(date -u +%Y-%m-%d)"
 Create a `../Server/exporter.yaml` file:
 
 ```yaml
-# Path to OpenVPN status file/s
-ovpntcpstatus: "/home/openvpn/logs/openvpn-tcp-status"
-ovpnudpstatus: "/home/openvpn/logs/openvpn-udp-status"
+# Path to OpenVPN TCP status file / 2.6.x
+ovpn_tcp_status: /home/openvpn/logs/openvpn-tcp-status
+
+# Path to OpenVPN UDP status file / 2.6.x
+ovpn_udp_status: /home/openvpn/logs/openvpn-udp-status
+
+# Path to OpenVPN common status file / 2.7.x
+ovpn_status: /home/openvpn/logs/openvpn-status
 ```
 
 ## Usage
@@ -323,11 +330,11 @@ scrape_configs:
 ```
 # HELP probe_success OpenVPN Status
 # TYPE probe_success gauge
-probe_success{version="2.6.15"} 1
+probe_success{version="2.6.19"} 1
 
 # HELP ovpn_info Software info
 # TYPE ovpn_info counter
-ovpn_info{product="OpenVPN",version="2.6.15"} 1
+ovpn_info{product="OpenVPN",version="2.6.19"} 1
 
 # HELP ovpn_sessions_total Total number of active sessions
 # TYPE ovpn_sessions_total gauge

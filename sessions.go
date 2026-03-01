@@ -58,6 +58,20 @@ func sessionsHandler(w http.ResponseWriter, r *http.Request, conf *Config, logge
 func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]SessionExport, error) {
 	var allSessions []SessionExport
 
+	// 2.7.x: single unified status file — protocol detected from address prefix
+	if conf.OvpnStatus != "" {
+		sessions, _, _, err := getOpenVPNSessions(server, conf.OvpnStatus, "", logger)
+		if err != nil {
+			_ = level.Warn(logger).Log("task", "read unified status", "err", err.Error())
+		} else {
+			allSessions = append(allSessions, sessions...)
+			if conf.Debug {
+				_ = level.Debug(logger).Log("task", "unified sessions", "count", len(sessions))
+			}
+		}
+	}
+
+	// 2.6.x: separate TCP status file, protocol forced to "tcp"
 	if conf.OvpnTCPStatus != "" {
 		sessions, _, _, err := getOpenVPNSessions(server, conf.OvpnTCPStatus, "tcp", logger)
 		if err != nil {
@@ -70,6 +84,7 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 		}
 	}
 
+	// 2.6.x: separate UDP status file, protocol forced to "udp"
 	if conf.OvpnUDPStatus != "" {
 		sessions, _, _, err := getOpenVPNSessions(server, conf.OvpnUDPStatus, "udp", logger)
 		if err != nil {
@@ -89,9 +104,92 @@ func getAllOpenVPNSessions(server string, conf *Config, logger log.Logger) ([]Se
 	return allSessions, nil
 }
 
-func getOpenVPNSessions(server string, statusFile string, protocol string, logger log.Logger) (connExport []SessionExport, product string, version string, err error) {
+// parseRealAddress extracts the protocol (if detectable from prefix), host and port
+// from the Real Address field in the OpenVPN status file.
+//
+// 2.6.x format:  "192.168.200.40:43154"
+// 2.7.x formats: "tcp4-server:192.168.200.40:47054"
+//                "udp4:192.168.200.10:45209"
+//
+// The detected protocol is returned as an empty string for 2.6.x entries since the
+// caller already knows the protocol from which file it is reading.
+func parseRealAddress(raw string) (detectedProto, host, port string) {
+	// 2.7.x TCP: starts with "tcp"
+	if strings.HasPrefix(raw, "tcp") {
+		// raw = "tcp4-server:192.168.200.40:47054"
+		// Strip everything up to and including the first colon to get "192.168.200.40:47054"
+		rest := raw[strings.Index(raw, ":")+1:]
+		host, port = splitHostPort(rest)
+		return "tcp", host, port
+	}
+
+	// 2.7.x UDP: starts with "udp"
+	if strings.HasPrefix(raw, "udp") {
+		// raw = "udp4:192.168.200.10:45209"
+		rest := raw[strings.Index(raw, ":")+1:]
+		host, port = splitHostPort(rest)
+		return "udp", host, port
+	}
+
+	// 2.6.x: plain "IP:PORT", no prefix
+	host, port = splitHostPort(raw)
+	return "", host, port
+}
+
+// splitHostPort splits "IP:PORT" into host and port. It uses the last colon as
+// the separator so it is safe for both IPv4 and (bracketed) IPv6 addresses.
+func splitHostPort(addr string) (host, port string) {
+	idx := strings.LastIndex(addr, ":")
+	if idx < 0 {
+		return addr, ""
+	}
+	return addr[:idx], addr[idx+1:]
+}
+
+func getOpenVPNSessions(server string, statusFile string, forcedProtocol string, logger log.Logger) (connExport []SessionExport, product string, version string, err error) {
 	reVersion := regexp.MustCompile(`(?m)^TITLE\s+(?P<product>\S+)\s+(?P<version>\S+)\s`)
-	reClient := regexp.MustCompile(`(?m)^CLIENT_LIST\s+(?P<CN>\S+?)\t(?P<RealIP>\S+?)\t(?P<vIPv4>\S+?)\t(?P<vIPv6>\S*?)\t(?P<rB>\S+?)\t(?P<sB>\S+?)\t(?P<startTime>.+?)\t(?P<unixTime>\S+?)\t(?P<Username>.+?)\t(?P<ClientID>\S+?)\t(?P<peerID>\S+?)\t(?P<dataCiphers>\S+?)`)
+
+	// Two regexes to handle the variable number of fields in 2.7 UDP lines.
+	//
+	// 2.6.x and 2.7 TCP line (13 tab-separated fields after CLIENT_LIST):
+	//   CN  RealIP  vIPv4  vIPv6  rB  sB  startTime  unixTime  Username  ClientID  PeerID  Cipher
+	//
+	// 2.7 UDP line (12 fields — PeerID is absent):
+	//   CN  RealIP  vIPv4  vIPv6  rB  sB  startTime  unixTime  Username  ClientID  Cipher
+	//
+	// Strategy: try the full 12-field regex first (TCP / 2.6.x). If it does not
+	// produce a PeerID capture, fall back to the 11-field UDP regex.
+	reClientFull := regexp.MustCompile(
+		`(?m)^CLIENT_LIST\t` +
+			`(?P<CN>\S+)\t` +
+			`(?P<RealIP>\S+)\t` +
+			`(?P<vIPv4>\S+)\t` +
+			`(?P<vIPv6>\S*)\t` +
+			`(?P<rB>\S+)\t` +
+			`(?P<sB>\S+)\t` +
+			`(?P<startTime>[^\t]+)\t` +
+			`(?P<unixTime>\S+)\t` +
+			`(?P<Username>[^\t]+)\t` +
+			`(?P<ClientID>\S+)\t` +
+			`(?P<PeerID>\S+)\t` +
+			`(?P<Cipher>\S+)`,
+	)
+
+	// UDP-only regex without PeerID
+	reClientUDP := regexp.MustCompile(
+		`(?m)^CLIENT_LIST\t` +
+			`(?P<CN>\S+)\t` +
+			`(?P<RealIP>\S+)\t` +
+			`(?P<vIPv4>\S+)\t` +
+			`(?P<vIPv6>\S*)\t` +
+			`(?P<rB>\S+)\t` +
+			`(?P<sB>\S+)\t` +
+			`(?P<startTime>[^\t]+)\t` +
+			`(?P<unixTime>\S+)\t` +
+			`(?P<Username>[^\t]+)\t` +
+			`(?P<ClientID>\S+)\t` +
+			`(?P<Cipher>\S+)`,
+	)
 
 	if statusFile == "" {
 		return nil, "", "", fmt.Errorf("status file path is empty")
@@ -113,36 +211,90 @@ func getOpenVPNSessions(server string, statusFile string, protocol string, logge
 		version = string(ver[0][2])
 	}
 
-	match := reClient.FindAllSubmatch(ovpnstats, -1)
-	for _, m1 := range match {
-		clientList := make(map[string]string)
-		for i, name := range reClient.SubexpNames() {
-			if i != 0 && name != "" {
-				clientList[name] = string(m1[i])
-			}
+	// Build a set of byte offsets that are already matched by the full regex so
+	// we can skip them when running the UDP fallback regex.
+	fullMatches := reClientFull.FindAllSubmatchIndex(ovpnstats, -1)
+	fullMatchedOffsets := make(map[int]bool, len(fullMatches))
+
+	for _, loc := range fullMatches {
+		fullMatchedOffsets[loc[0]] = true
+
+		clientList := namedCaptures(reClientFull, ovpnstats, loc)
+		detectedProto, host, port := parseRealAddress(clientList["RealIP"])
+
+		proto := forcedProtocol
+		if proto == "" {
+			proto = detectedProto
 		}
 
-		var cexp SessionExport
-		cip := strings.Split(clientList["RealIP"], ":")
-		cexp.RemoteHost = cip[0]
-		if len(cip) > 1 {
-			cexp.RemotePort = cip[1]
+		cexp := SessionExport{
+			Server:      server,
+			Protocol:    proto,
+			P1Uniqueid:  clientList["PeerID"],
+			P2Uniqueid:  clientList["ClientID"],
+			RemoteID:    clientList["CN"],
+			State:       "ESTABLISHED",
+			RemoteHost:  host,
+			RemotePort:  port,
+			RemoteTs:    clientList["vIPv4"],
+			BytesIn:     clientList["rB"],
+			BytesOut:    clientList["sB"],
+			Established: clientList["startTime"],
+			PacketsIn:   "0",
+			PacketsOut:  "0",
 		}
-		cexp.Server = server
-		cexp.Protocol = protocol
-		cexp.P1Uniqueid = clientList["peerID"]
-		cexp.P2Uniqueid = clientList["ClientID"]
-		cexp.RemoteID = clientList["CN"]
-		cexp.State = "ESTABLISHED"
-		cexp.RemoteTs = clientList["vIPv4"]
-		cexp.BytesIn = clientList["rB"]
-		cexp.BytesOut = clientList["sB"]
-		cexp.Established = clientList["startTime"]
-		cexp.PacketsIn = "0"
-		cexp.PacketsOut = "0"
+		connExport = append(connExport, cexp)
+	}
 
+	// Run the UDP fallback regex and process only lines not already matched above.
+	udpMatches := reClientUDP.FindAllSubmatchIndex(ovpnstats, -1)
+	for _, loc := range udpMatches {
+		if fullMatchedOffsets[loc[0]] {
+			continue // already processed by the full regex
+		}
+
+		clientList := namedCaptures(reClientUDP, ovpnstats, loc)
+		detectedProto, host, port := parseRealAddress(clientList["RealIP"])
+
+		proto := forcedProtocol
+		if proto == "" {
+			proto = detectedProto
+		}
+
+		cexp := SessionExport{
+			Server:      server,
+			Protocol:    proto,
+			P1Uniqueid:  "", // PeerID not present in 2.7 UDP lines
+			P2Uniqueid:  clientList["ClientID"],
+			RemoteID:    clientList["CN"],
+			State:       "ESTABLISHED",
+			RemoteHost:  host,
+			RemotePort:  port,
+			RemoteTs:    clientList["vIPv4"],
+			BytesIn:     clientList["rB"],
+			BytesOut:    clientList["sB"],
+			Established: clientList["startTime"],
+			PacketsIn:   "0",
+			PacketsOut:  "0",
+		}
 		connExport = append(connExport, cexp)
 	}
 
 	return connExport, product, version, nil
+}
+
+// namedCaptures returns a map of named subgroup -> matched string for a single
+// FindAllSubmatchIndex result (loc) applied to data using the given regexp.
+func namedCaptures(re *regexp.Regexp, data []byte, loc []int) map[string]string {
+	result := make(map[string]string)
+	for i, name := range re.SubexpNames() {
+		if i == 0 || name == "" {
+			continue
+		}
+		start, end := loc[2*i], loc[2*i+1]
+		if start >= 0 && end >= 0 {
+			result[name] = string(data[start:end])
+		}
+	}
+	return result
 }
