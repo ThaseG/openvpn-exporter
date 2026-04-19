@@ -161,7 +161,7 @@ func getOpenVPNSessions(server string, statusFile string, forcedProtocol string,
 	// produce a PeerID capture, fall back to the 11-field UDP regex.
 	reClientFull := regexp.MustCompile(
 		`(?m)^CLIENT_LIST\t` +
-			`(?P<CN>\S+)\t` +
+			`(?P<CN>[^\t]+)\t` +
 			`(?P<RealIP>\S+)\t` +
 			`(?P<vIPv4>\S+)\t` +
 			`(?P<vIPv6>\S*)\t` +
@@ -178,7 +178,7 @@ func getOpenVPNSessions(server string, statusFile string, forcedProtocol string,
 	// UDP-only regex without PeerID
 	reClientUDP := regexp.MustCompile(
 		`(?m)^CLIENT_LIST\t` +
-			`(?P<CN>\S+)\t` +
+			`(?P<CN>[^\t]+)\t` +
 			`(?P<RealIP>\S+)\t` +
 			`(?P<vIPv4>\S+)\t` +
 			`(?P<vIPv6>\S*)\t` +
