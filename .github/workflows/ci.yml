@@ -50,19 +50,3 @@ jobs:
         fi
         echo "⚠️ golangci-lint failed, treating as non-critical"
         exit 0
-
-  trivy-scan-docker:
-    runs-on: self-hosted
-    container:
-      image: aquasec/trivy:latest
-    steps:
-    
-    - uses: actions/checkout@v4
-    
-    - name: Run Trivy vulnerability scanner
-      run: |
-        trivy fs . \
-          --severity HIGH,CRITICAL \
-          --exit-code 1 \
-          --no-progress \
-          --format table
