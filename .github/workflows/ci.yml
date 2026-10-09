@@ -15,6 +15,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         fetch-depth: 0
+        persist-credentials: false
     
     - name: Fix file permissions
       run: |
@@ -24,6 +25,7 @@ jobs:
     - uses: actions/setup-go@v5
       with:
         go-version: '1.25'
+        cache: false
     
     - name: Setup Go environment and dependencies
       run: |
@@ -38,6 +40,7 @@ jobs:
       with:
         version: latest
         args: --timeout=5m
+        skip-cache: true
       continue-on-error: true
     
     - name: Check golangci-lint result
@@ -51,28 +54,57 @@ jobs:
         echo "⚠️ golangci-lint failed, treating as non-critical"
         exit 0
 
+    # Last step of this job so it runs on the same runner that did the work.
+    # Caches and persisted credentials are disabled above, so the post-job steps
+    # of checkout / setup-go / golangci-lint have nothing left to do afterwards.
     - name: Clean up runner VM
       if: always()
+      continue-on-error: true
       run: |
-        # Docker: stop/remove all containers, then purge images, volumes, networks and build cache
-        if command -v docker >/dev/null 2>&1; then
-          CONTAINERS=$(sudo docker ps -aq)
-          if [ -n "$CONTAINERS" ]; then
-            sudo docker rm -f $CONTAINERS || true
-          fi
-          sudo docker system prune -af --volumes || true
-          sudo docker builder prune -af || true
+        # Use sudo only if it works non-interactively (no TTY on the runner)
+        SUDO=""
+        if [ "$(id -u)" -ne 0 ] && sudo -n true 2>/dev/null; then
+          SUDO="sudo -n"
         fi
 
-        # Go build/module/test caches and golangci-lint cache
+        # Docker: stop/remove all containers, then purge images, volumes, networks and build cache
+        DOCKER=""
+        if command -v docker >/dev/null 2>&1; then
+          if docker info >/dev/null 2>&1; then
+            DOCKER="docker"
+          elif [ -n "$SUDO" ] && $SUDO docker info >/dev/null 2>&1; then
+            DOCKER="$SUDO docker"
+          fi
+        fi
+        if [ -n "$DOCKER" ]; then
+          CONTAINERS=$($DOCKER ps -aq || true)
+          if [ -n "$CONTAINERS" ]; then
+            $DOCKER rm -f $CONTAINERS || true
+          fi
+          $DOCKER system prune -af --volumes || true
+          $DOCKER builder prune -af || true
+        else
+          echo "Docker not accessible, skipping Docker cleanup"
+        fi
+
+        # Go build/module/test caches
         if command -v go >/dev/null 2>&1; then
           go clean -cache -modcache -testcache || true
         fi
-        sudo rm -rf "$HOME/.cache/golangci-lint" "$HOME/go/pkg/mod" || true
+        $SUDO rm -rf "$HOME/.cache/go-build" "$HOME/go/pkg/mod" || true
+
+        # golangci-lint cache and binaries extracted into $HOME by golangci-lint-action
+        $SUDO rm -rf "$HOME/.cache/golangci-lint" "$HOME"/golangci-lint-* || true
 
         # Go toolchain installed by setup-go
-        sudo rm -rf "${RUNNER_TOOL_CACHE}/go" || true
+        $SUDO rm -rf "${RUNNER_TOOL_CACHE}/go" || true
+
+        # Runner diagnostic logs older than 7 days (default layout: <runner>/_work, <runner>/_diag)
+        DIAG_DIR="$(dirname "$(dirname "$RUNNER_WORKSPACE")")/_diag"
+        if [ -d "$DIAG_DIR" ]; then
+          $SUDO find "$DIAG_DIR" -type f -name '*.log' -mtime +7 -delete || true
+        fi
 
         # Workspace and temp files
-        sudo find "$GITHUB_WORKSPACE" -mindepth 1 -delete || true
-        sudo rm -rf "${RUNNER_TEMP:?}"/* || true
+        $SUDO find "$GITHUB_WORKSPACE" -mindepth 1 -delete || true
+        $SUDO rm -rf "${RUNNER_TEMP:?}"/* || true
