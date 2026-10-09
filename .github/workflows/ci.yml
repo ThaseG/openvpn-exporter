@@ -50,3 +50,29 @@ jobs:
         fi
         echo "⚠️ golangci-lint failed, treating as non-critical"
         exit 0
+
+    - name: Clean up runner VM
+      if: always()
+      run: |
+        # Docker: stop/remove all containers, then purge images, volumes, networks and build cache
+        if command -v docker >/dev/null 2>&1; then
+          CONTAINERS=$(sudo docker ps -aq)
+          if [ -n "$CONTAINERS" ]; then
+            sudo docker rm -f $CONTAINERS || true
+          fi
+          sudo docker system prune -af --volumes || true
+          sudo docker builder prune -af || true
+        fi
+
+        # Go build/module/test caches and golangci-lint cache
+        if command -v go >/dev/null 2>&1; then
+          go clean -cache -modcache -testcache || true
+        fi
+        sudo rm -rf "$HOME/.cache/golangci-lint" "$HOME/go/pkg/mod" || true
+
+        # Go toolchain installed by setup-go
+        sudo rm -rf "${RUNNER_TOOL_CACHE}/go" || true
+
+        # Workspace and temp files
+        sudo find "$GITHUB_WORKSPACE" -mindepth 1 -delete || true
+        sudo rm -rf "${RUNNER_TEMP:?}"/* || true
