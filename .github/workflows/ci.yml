@@ -19,8 +19,15 @@ jobs:
     
     - name: Fix file permissions
       run: |
-        sudo chown -R $(whoami):$(whoami) $GITHUB_WORKSPACE
-        sudo chmod -R u+rwX $GITHUB_WORKSPACE
+        # Only files left by other users (e.g. root from container jobs) need sudo
+        if [ -n "$(find "$GITHUB_WORKSPACE" ! -user "$(id -u)" -print -quit)" ]; then
+          if sudo -n true 2>/dev/null; then
+            sudo -n chown -R "$(id -u):$(id -g)" "$GITHUB_WORKSPACE"
+          else
+            echo "::warning::Workspace has files not owned by $(whoami) and passwordless sudo is unavailable"
+          fi
+        fi
+        chmod -R u+rwX "$GITHUB_WORKSPACE" || true
     
     - uses: actions/setup-go@v5
       with:
