@@ -10,8 +10,8 @@ To see an example usage and e2e tests, please visit this [openvpn repository.](h
 
 | Exporter Version | Supported OpenVPN version |
 | ------ | ------ |
-| v1.1.0 | v2.7.x </br> v2.6.x |
-| v1.0.3 | v2.6.x |
+| v1.1.x | v2.7.x </br> v2.6.x |
+| v1.0.x | v2.6.x |
 
 ## Images
 
@@ -73,7 +73,7 @@ go_gc_gomemlimit_bytes 9.223372036854776e+18
 go_goroutines 10
 # HELP go_info Information about the Go environment.
 # TYPE go_info gauge
-go_info{version="go1.25.7"} 1
+go_info{version="go1.27.3"} 1
 # HELP go_memstats_alloc_bytes Number of bytes allocated in heap and currently in use. Equals to /memory/classes/heap/objects:bytes.
 # TYPE go_memstats_alloc_bytes gauge
 go_memstats_alloc_bytes 1.986984e+06
@@ -251,7 +251,7 @@ go mod download
 go build -o openvpn-exporter
 
 # Optional: Build with version info
-go build -ldflags "-X main.version=1.1.0 -X main.buildDate=$(date -u +%Y-%m-%d)" -o openvpn-exporter
+go build -ldflags "-X main.version=1.1.2 -X main.buildDate=$(date -u +%Y-%m-%d)" -o openvpn-exporter
 ```
 
 ## Configuration

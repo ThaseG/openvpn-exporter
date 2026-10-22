@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	version   = "1.1.0"
-	buildDate = "2025-03-01"
+	version   = "1.1.2"
+	buildDate = "2026-10-22"
 )
 
 func main() {
@@ -198,7 +198,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request, logger log.Logger) {
             <a href="/sessions_local" class="link-item">📋 Local Sessions JSON</a>
         </div>
         <div class="footer">
-            OpenVPN Exporter v1.1.0
+            OpenVPN Exporter v1.1.2
         </div>
     </div>
 </body>
